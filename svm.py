@@ -8,7 +8,7 @@ from sklearn import svm
 
 
 # take number random files since there are more CR than Harlem
-def data_adq(group,number):
+def data_adq(group, number):
     path = os.listdir('./data/' + group + '/')
     files = list()
     # iterate through the files to consider them as part of dataset
@@ -39,7 +39,7 @@ def data_prep(group, files, mode):
 
 
 # save the data in a file so the same dataset could be used for further tests
-def data_save(group, mode,feat_vect):
+def data_save(group, mode, feat_vect):
     save_to = '../'+str(group[0]) +str(mode) + '.csv'
     np.savetxt(save_to, feat_vect, delimiter=",")
 
@@ -85,18 +85,18 @@ def split_data(features_train, features_test, labels_train, labels_test):
     # Split the data into training and testing sets
     train_features, _, train_labels, _ = train_test_split(features_train, labels_train, test_size=0.0001,
                                                           random_state=32)
-    _, test_features, _, test_labels = train_test_split(features_test, labels_test, test_size=0.98  ,
+    _, test_features, _, test_labels = train_test_split(features_train, labels_train, test_size=0.98  ,
                                                                    random_state=32)
-    print('Training Features Shape:', train_features.shape)
-    print('Training Labels Shape:', train_labels.shape)
-    print('Testing Features Shape:', test_features.shape)
-    print('Testing Labels Shape:', test_labels.shape)
+    # print('Training Features Shape:', train_features.shape)
+    # print('Training Labels Shape:', train_labels.shape)
+    # print('Testing Features Shape:', test_features.shape)
+    # print('Testing Labels Shape:', test_labels.shape)
     return train_features, test_features, train_labels, test_labels
 
 
-def support_vec(train_features, test_features, train_labels, test_labels):
+def support_vec(train_features, test_features, train_labels, test_labels, gamma):
     # Create a svm Classifier
-    clf = svm.SVC(kernel='rbf')
+    clf = svm.SVC(kernel='rbf', gamma=gamma)
 
     # Train the model using the training sets
     clf.fit(train_features, train_labels)
@@ -119,20 +119,239 @@ def support_vec(train_features, test_features, train_labels, test_labels):
 if __name__ == '__main__':
     n_test = 44
     n_train = 114
-    group_class_train, mat_files = data_adq('1-cr_train', n_train)
-    data_prep(group_class_train, mat_files, 'train')
-    group_class_test, mat_files = data_adq('1-cr_test', n_test)
-    data_prep(group_class_test, mat_files, 'test')
+    accsscale = []
+    accsauto = []
+    accsdot1 = []
+    accs1 = []
+    accs10 = []
+    accs50 = []
+    accs100 = []
+    accs500 = []
+    accs1000 = []
 
-    group_class2, mat_files2 = data_adq('2-hr_train', n_train)
-    data_prep(group_class2, mat_files2, 'train')
-    group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
-    data_prep(group_class2_test, mat_files2, 'test')
+    for i in range(0, 6):
+        group_class_train, mat_files = data_adq('1-cr_train', n_train)
+        data_prep(group_class_train, mat_files, 'train')
+        group_class_test, mat_files = data_adq('1-cr_test', n_test)
+        data_prep(group_class_test, mat_files, 'test')
 
-    feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation('./data/1train.csv',
-                                                                                                   './data/2train.csv',
-                                                                                                   './data/1test.csv',
-                                                                                                   './data/2test.csv')
-    train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test, label_class,
-                                                                          labels_test)
-    acc = support_vec(train_features, test_features, train_labels, test_labels)
+        group_class2, mat_files2 = data_adq('2-hr_train', n_train)
+        data_prep(group_class2, mat_files2, 'train')
+        group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
+        data_prep(group_class2_test, mat_files2, 'test')
+
+        feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation('./data/1train.csv',
+                                                                                                       './data/2train.csv',
+                                                                                                       './data/1test.csv',
+                                                                                                       './data/2test.csv')
+        train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test, label_class,
+                                                                              labels_test)
+        acc = support_vec(train_features, test_features, train_labels, test_labels, 'scale')
+        accsscale.append(acc)
+
+    for i in range(0, 6):
+        group_class_train, mat_files = data_adq('1-cr_train', n_train)
+        data_prep(group_class_train, mat_files, 'train')
+        group_class_test, mat_files = data_adq('1-cr_test', n_test)
+        data_prep(group_class_test, mat_files, 'test')
+
+        group_class2, mat_files2 = data_adq('2-hr_train', n_train)
+        data_prep(group_class2, mat_files2, 'train')
+        group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
+        data_prep(group_class2_test, mat_files2, 'test')
+
+        feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
+            './data/1train.csv',
+            './data/2train.csv',
+            './data/1test.csv',
+            './data/2test.csv')
+        train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
+                                                                              label_class,
+                                                                              labels_test)
+        acc = support_vec(train_features, test_features, train_labels, test_labels, 'auto')
+        accsauto.append(acc)
+
+    for i in range(0, 6):
+        group_class_train, mat_files = data_adq('1-cr_train', n_train)
+        data_prep(group_class_train, mat_files, 'train')
+        group_class_test, mat_files = data_adq('1-cr_test', n_test)
+        data_prep(group_class_test, mat_files, 'test')
+
+        group_class2, mat_files2 = data_adq('2-hr_train', n_train)
+        data_prep(group_class2, mat_files2, 'train')
+        group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
+        data_prep(group_class2_test, mat_files2, 'test')
+
+        feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
+            './data/1train.csv',
+            './data/2train.csv',
+            './data/1test.csv',
+            './data/2test.csv')
+        train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
+                                                                              label_class,
+                                                                              labels_test)
+        acc = support_vec(train_features, test_features, train_labels, test_labels, 0.1)
+        accsdot1.append(acc)
+
+    for i in range(0, 6):
+        group_class_train, mat_files = data_adq('1-cr_train', n_train)
+        data_prep(group_class_train, mat_files, 'train')
+        group_class_test, mat_files = data_adq('1-cr_test', n_test)
+        data_prep(group_class_test, mat_files, 'test')
+
+        group_class2, mat_files2 = data_adq('2-hr_train', n_train)
+        data_prep(group_class2, mat_files2, 'train')
+        group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
+        data_prep(group_class2_test, mat_files2, 'test')
+
+        feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
+            './data/1train.csv',
+            './data/2train.csv',
+            './data/1test.csv',
+            './data/2test.csv')
+        train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
+                                                                              label_class,
+                                                                              labels_test)
+        acc = support_vec(train_features, test_features, train_labels, test_labels, 1)
+        accs1.append(acc)
+
+    for i in range(0, 6):
+        group_class_train, mat_files = data_adq('1-cr_train', n_train)
+        data_prep(group_class_train, mat_files, 'train')
+        group_class_test, mat_files = data_adq('1-cr_test', n_test)
+        data_prep(group_class_test, mat_files, 'test')
+
+        group_class2, mat_files2 = data_adq('2-hr_train', n_train)
+        data_prep(group_class2, mat_files2, 'train')
+        group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
+        data_prep(group_class2_test, mat_files2, 'test')
+
+        feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
+            './data/1train.csv',
+            './data/2train.csv',
+            './data/1test.csv',
+            './data/2test.csv')
+        train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
+                                                                              label_class,
+                                                                              labels_test)
+        acc = support_vec(train_features, test_features, train_labels, test_labels, 10)
+        accs10.append(acc)
+
+    for i in range(0, 6):
+        group_class_train, mat_files = data_adq('1-cr_train', n_train)
+        data_prep(group_class_train, mat_files, 'train')
+        group_class_test, mat_files = data_adq('1-cr_test', n_test)
+        data_prep(group_class_test, mat_files, 'test')
+
+        group_class2, mat_files2 = data_adq('2-hr_train', n_train)
+        data_prep(group_class2, mat_files2, 'train')
+        group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
+        data_prep(group_class2_test, mat_files2, 'test')
+
+        feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
+            './data/1train.csv',
+            './data/2train.csv',
+            './data/1test.csv',
+            './data/2test.csv')
+        train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
+                                                                              label_class,
+                                                                              labels_test)
+        acc = support_vec(train_features, test_features, train_labels, test_labels, 50)
+        accs50.append(acc)
+
+    for i in range(0, 6):
+        group_class_train, mat_files = data_adq('1-cr_train', n_train)
+        data_prep(group_class_train, mat_files, 'train')
+        group_class_test, mat_files = data_adq('1-cr_test', n_test)
+        data_prep(group_class_test, mat_files, 'test')
+
+        group_class2, mat_files2 = data_adq('2-hr_train', n_train)
+        data_prep(group_class2, mat_files2, 'train')
+        group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
+        data_prep(group_class2_test, mat_files2, 'test')
+
+        feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
+            './data/1train.csv',
+            './data/2train.csv',
+            './data/1test.csv',
+            './data/2test.csv')
+        train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
+                                                                              label_class,
+                                                                              labels_test)
+        acc = support_vec(train_features, test_features, train_labels, test_labels, 100)
+        accs100.append(acc)
+
+    for i in range(0, 6):
+        group_class_train, mat_files = data_adq('1-cr_train', n_train)
+        data_prep(group_class_train, mat_files, 'train')
+        group_class_test, mat_files = data_adq('1-cr_test', n_test)
+        data_prep(group_class_test, mat_files, 'test')
+
+        group_class2, mat_files2 = data_adq('2-hr_train', n_train)
+        data_prep(group_class2, mat_files2, 'train')
+        group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
+        data_prep(group_class2_test, mat_files2, 'test')
+
+        feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
+            './data/1train.csv',
+            './data/2train.csv',
+            './data/1test.csv',
+            './data/2test.csv')
+        train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
+                                                                              label_class,
+                                                                              labels_test)
+        acc = support_vec(train_features, test_features, train_labels, test_labels, 500)
+        accs500.append(acc)
+
+    for i in range(0, 6):
+        group_class_train, mat_files = data_adq('1-cr_train', n_train)
+        data_prep(group_class_train, mat_files, 'train')
+        group_class_test, mat_files = data_adq('1-cr_test', n_test)
+        data_prep(group_class_test, mat_files, 'test')
+
+        group_class2, mat_files2 = data_adq('2-hr_train', n_train)
+        data_prep(group_class2, mat_files2, 'train')
+        group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
+        data_prep(group_class2_test, mat_files2, 'test')
+
+        feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
+            './data/1train.csv',
+            './data/2train.csv',
+            './data/1test.csv',
+            './data/2test.csv')
+        train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
+                                                                              label_class,
+                                                                              labels_test)
+        acc = support_vec(train_features, test_features, train_labels, test_labels, 1000)
+        accs1000.append(acc)
+
+    print('scale gamma', accsscale)
+    print('auto gamma', accsauto)
+    print('0.1 gamma', accsdot1)
+    print('1 gamma', accs1)
+    print('10 gamma', accs10)
+    print('50 gamma', accs50)
+    print('100 gamma', accs100)
+    print('500 gamma', accs500)
+    #print('1000 gamma', accs1000)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
