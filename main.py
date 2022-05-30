@@ -16,8 +16,10 @@ import pydot
 def data_adq(group,number):
     path = os.listdir('./data/' + group + '/')
     files = list()
+    # iterate through the files to consider them as part of dataset
     for i in range(number):
         file = random.choice(path)
+        # take the only file only once
         while files.count(file):
             file = random.choice(path)
 
@@ -27,24 +29,28 @@ def data_adq(group,number):
 
 # combine feature vectors and add group classification
 def data_prep(group, files, mode):
+    # change work directory for simplicity
     os.chdir('./data/' + group+'/')
     feat_vect = list()
+    # loop through files getting feature vector and adding the corresponding group
     for file in files:
         mat = sio.loadmat(file)
         theta = mat.get('theta')
         class_group = np.concatenate( ([int(group[0])], theta.flatten()) )
         feat_vect.append(class_group)
     data_save(group, mode, feat_vect)
+    # return to home directory
     os.chdir('../..')
 
 
+# save the data in a file so the same dataset could be used for further tests
 def data_save(group, mode,feat_vect):
     save_to = '../'+str(group[0]) +str(mode) + '.csv'
     np.savetxt(save_to, feat_vect, delimiter=",")
 
 
+# manipulate the data to remove the labels
 def features_manipulation(file1, file2, file3, file4):
-
     features1 = pd.read_csv(file1, header=None,  delimiter=",")
     features2 = pd.read_csv(file2, header=None,  delimiter=",")
     features = pd.concat([features1, features2])
@@ -78,6 +84,8 @@ def features_manipulation(file1, file2, file3, file4):
     return features, labels, feature_list, features_test, labels_test
 
 
+# split the data into train and test
+# since there is previous train and test predefined it is forced to simplify
 def split_data(features_train, features_test, labels_train, labels_test):
     # Split the data into training and testing sets
     train_features, _, train_labels, _ = train_test_split(features_train, labels_train, test_size=0.0001,
