@@ -92,8 +92,8 @@ def split_data(features_train, features_test, labels_train, labels_test):
     # Split the data into training and testing sets
     train_features, _, train_labels, _ = train_test_split(features_train, labels_train, test_size=0.0001,
                                                           random_state=32)
-    _, test_features, _, test_labels = train_test_split(features_test, labels_test, test_size=0.98  ,
-
+    _, test_features, _, test_labels = train_test_split(features_test, labels_test, test_size=0.98,
+                                                        random_state= 32)
     return train_features, test_features, train_labels, test_labels
 
 
@@ -101,17 +101,18 @@ def random_forest(train_features, test_features, train_labels, test_labels):
 
     rf = RandomForestClassifier()
     random_search = {'criterion': ['gini'],
-                     'max_depth': list(np.linspace(5, 500, 10, dtype = int)) + [None],
+                     'max_depth': list(np.linspace(5, 500, num=10, dtype = int)) + [None],
                      'max_features': ['sqrt'],
                      'min_samples_leaf': [1],
                      'min_samples_split': [2],
-                     'n_estimators': list(np.linspace(100, 5000, 1000, dtype = int))}
+                     'n_estimators': list(np.linspace(100, 5000, num=10, dtype = int))}
     model = RandomizedSearchCV(estimator=rf, param_distributions=random_search, n_iter=11, random_state=32)
     # Train the model on training data
     model.fit(train_features, train_labels)
     # Use the forest's predict method on the test data
 
     predictions = model.best_estimator_.predict(test_features)
+    print(list(np.linspace(100, 5000, num=10, dtype = int)))
 
     # get results for later representation
     table = pd.pivot_table(pd.DataFrame(model.cv_results_),
