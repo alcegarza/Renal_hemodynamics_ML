@@ -8,7 +8,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import RandomForestClassifier
 import seaborn as sns
 import matplotlib.pyplot as plt
-from sklearn.metrics import classification_report,confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import graphviz
 from sklearn.tree import export_graphviz
 import pydot
@@ -94,6 +94,10 @@ def split_data(features_train, features_test, labels_train, labels_test):
                                                           random_state=32)
     _, test_features, _, test_labels = train_test_split(features_test, labels_test, test_size=0.98,
                                                         random_state= 32)
+    print('Training Features Shape:', train_features.shape)
+    print('Training Labels Shape:', train_labels.shape)
+    print('Testing Features Shape:', test_features.shape)
+    print('Testing Labels Shape:', test_labels.shape)
     return train_features, test_features, train_labels, test_labels
 
 
@@ -112,33 +116,32 @@ def random_forest(train_features, test_features, train_labels, test_labels):
     # Use the forest's predict method on the test data
 
     predictions = model.best_estimator_.predict(test_features)
-    print(list(np.linspace(100, 5000, num=10, dtype = int)))
+    pd.set_option('display.max_columns', None)
+
+    print((model.best_estimator_))
 
     # get results for later representation
     table = pd.pivot_table(pd.DataFrame(model.cv_results_),
                            values='mean_test_score', index='param_max_depth', columns='param_n_estimators'
                            )
+    #pd.set_option('display.max_columns', None)
+    #print(pd.DataFrame(model.cv_results_).head())
     sns.heatmap(table)
     plt.show()
 
-    # Calculate the absolute errors
-    errors = abs(predictions - test_labels)
-    print('Mean Absolute Error:', round(np.mean(errors), 2),)
-    # Calculate mean absolute percentage error (MAPE)
-    mape = 100 * (errors / test_labels)
-    # Calculate and display accuracy
-    accuracy = 100 - np.mean(mape)
-    print('Accuracy:', round(accuracy, 2), '%.')
+    # # Calculate the absolute errors
+    # errors = abs(predictions - test_labels)
+    # print('predictions ', predictions)
+    # print('test labels ', test_labels)
+    # print('errors ', errors)
+    # print('Mean Absolute Error:', round(np.mean(errors), 2),)
+    # # Calculate mean absolute percentage error (MAPE)
+    # mape = 100 * (errors / test_labels)
+    # # Calculate and display accuracy
+    # accuracy = 100 - np.mean(mape)
+    # print('Accuracy:', round(accuracy, 2), '%.')
+    print('Accuracy score', accuracy_score(test_labels, predictions))
 
-    # #draw tree
-    # # Pull out one tree from the forest
-    # tree = rf.estimators_[5]
-    # # Export the image to a dot file
-    # dot_data = export_graphviz(tree, feature_names=feature_list, rounded=True, precision=1)
-    # # Use dot file to create a graph
-    # graph = graphviz.Source(dot_data, format='png')
-    # graph
-    # #graph.render('figure_name')
     return round(accuracy, 2)
 
 
