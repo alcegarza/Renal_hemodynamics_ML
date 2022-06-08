@@ -111,9 +111,7 @@ def random_forest(train_features, test_features, train_labels, test_labels, feat
 def array_to_Excel_col(array, row, col, ws):
     for i in range(0, len(array)):
         e = ws.cell(row=row + i, column=col)
-        print('antes ', e.value)
         e.value = array[i]
-        print('despues ', e.value)
 
 
 def conf_to_Excel(confs, row, col, ws):
@@ -126,167 +124,38 @@ def conf_to_Excel(confs, row, col, ws):
 if __name__ == '__main__':
     n_test = 41
     n_train = 126
-    accs1 = []
-    accs5 = []
-    accs10 = []
-    accs100 = []
-    accs500 = []
-    accs1000 = []
-    accs5000 = []
-    accs10000 = []
+    n_trees = [1,5,10,100,500,1000,5000,10000]
+    accs = []
+    for i in range (0,len(n_trees)):
+        accs.append([])
 
+    j = 0
+    for acc in accs:
+        for i in range(0, 6):
+            group_class_train, mat_files = data_adq('1-cr_train', n_train)
+            data_prep(group_class_train, mat_files, 'train')
+            group_class_test, mat_files = data_adq('1-cr_test', n_test)
+            data_prep(group_class_test, mat_files, 'test')
 
+            group_class2, mat_files2 = data_adq('2-hr_train', n_train)
+            data_prep(group_class2, mat_files2, 'train')
+            group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
+            data_prep(group_class2_test, mat_files2, 'test')
 
-    for i in range(0, 6):
-        group_class_train, mat_files = data_adq('1-cr_train', n_train)
-        data_prep(group_class_train, mat_files, 'train')
-        group_class_test, mat_files = data_adq('1-cr_test', n_test)
-        data_prep(group_class_test, mat_files, 'test')
+            feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
+                './data/1train.csv', './data/2train.csv', './data/1test.csv', './data/2test.csv')
+            train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
+                                                                                  label_class, labels_test)
+            accuracy = random_forest(train_features, test_features, train_labels, test_labels, feature_list, n_trees[j])
+            acc.append(accuracy)
+        j += 1
 
-        group_class2, mat_files2 = data_adq('2-hr_train', n_train)
-        data_prep(group_class2, mat_files2, 'train')
-        group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
-        data_prep(group_class2_test, mat_files2, 'test')
-
-        feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
-            './data/1train.csv', './data/2train.csv', './data/1test.csv', './data/2test.csv')
-        train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
-                                                                              label_class, labels_test)
-        acc = random_forest(train_features, test_features, train_labels, test_labels, feature_list, 1)
-        accs1.append(acc)
-    for i in range(0, 6):
-        group_class_train, mat_files = data_adq('1-cr_train', n_train)
-        data_prep(group_class_train, mat_files, 'train')
-        group_class_test, mat_files = data_adq('1-cr_test', n_test)
-        data_prep(group_class_test, mat_files, 'test')
-
-        group_class2, mat_files2 = data_adq('2-hr_train', n_train)
-        data_prep(group_class2, mat_files2, 'train')
-        group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
-        data_prep(group_class2_test, mat_files2, 'test')
-
-        feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
-            './data/1train.csv', './data/2train.csv', './data/1test.csv', './data/2test.csv')
-        train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
-                                                                              label_class, labels_test)
-        acc = random_forest(train_features, test_features, train_labels, test_labels, feature_list, 5)
-        accs5.append(acc)
-    for i in range(0, 6):
-        group_class_train, mat_files = data_adq('1-cr_train', n_train)
-        data_prep(group_class_train, mat_files, 'train')
-        group_class_test, mat_files = data_adq('1-cr_test', n_test)
-        data_prep(group_class_test, mat_files, 'test')
-
-        group_class2, mat_files2 = data_adq('2-hr_train', n_train)
-        data_prep(group_class2, mat_files2, 'train')
-        group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
-        data_prep(group_class2_test, mat_files2, 'test')
-
-        feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
-            './data/1train.csv', './data/2train.csv', './data/1test.csv', './data/2test.csv')
-        train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
-                                                                              label_class, labels_test)
-        acc = random_forest(train_features, test_features, train_labels, test_labels, feature_list, 10)
-        accs10.append(acc)
-    for i in range(0, 6):
-        group_class_train, mat_files = data_adq('1-cr_train', n_train)
-        data_prep(group_class_train, mat_files, 'train')
-        group_class_test, mat_files = data_adq('1-cr_test', n_test)
-        data_prep(group_class_test, mat_files, 'test')
-
-        group_class2, mat_files2 = data_adq('2-hr_train', n_train)
-        data_prep(group_class2, mat_files2, 'train')
-        group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
-        data_prep(group_class2_test, mat_files2, 'test')
-
-        feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
-            './data/1train.csv', './data/2train.csv', './data/1test.csv', './data/2test.csv')
-        train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
-                                                                              label_class, labels_test)
-        acc = random_forest(train_features, test_features, train_labels, test_labels, feature_list, 50)
-        accs100.append(acc)
-    for i in range(0, 6):
-        group_class_train, mat_files = data_adq('1-cr_train', n_train)
-        data_prep(group_class_train, mat_files, 'train')
-        group_class_test, mat_files = data_adq('1-cr_test', n_test)
-        data_prep(group_class_test, mat_files, 'test')
-
-        group_class2, mat_files2 = data_adq('2-hr_train', n_train)
-        data_prep(group_class2, mat_files2, 'train')
-        group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
-        data_prep(group_class2_test, mat_files2, 'test')
-
-        feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
-            './data/1train.csv', './data/2train.csv', './data/1test.csv', './data/2test.csv')
-        train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
-                                                                              label_class, labels_test)
-        acc = random_forest(train_features, test_features, train_labels, test_labels, feature_list, 100)
-        accs500.append(acc)
-
-    for i in range(0, 6):
-        group_class_train, mat_files = data_adq('1-cr_train', n_train)
-        data_prep(group_class_train, mat_files, 'train')
-        group_class_test, mat_files = data_adq('1-cr_test', n_test)
-        data_prep(group_class_test, mat_files, 'test')
-
-        group_class2, mat_files2 = data_adq('2-hr_train', n_train)
-        data_prep(group_class2, mat_files2, 'train')
-        group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
-        data_prep(group_class2_test, mat_files2, 'test')
-
-        feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
-            './data/1train.csv', './data/2train.csv', './data/1test.csv', './data/2test.csv')
-        train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
-                                                                              label_class, labels_test)
-        acc = random_forest(train_features, test_features, train_labels, test_labels, feature_list, 500)
-        accs1000.append(acc)
-    for i in range(0, 6):
-        group_class_train, mat_files = data_adq('1-cr_train', n_train)
-        data_prep(group_class_train, mat_files, 'train')
-        group_class_test, mat_files = data_adq('1-cr_test', n_test)
-        data_prep(group_class_test, mat_files, 'test')
-
-        group_class2, mat_files2 = data_adq('2-hr_train', n_train)
-        data_prep(group_class2, mat_files2, 'train')
-        group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
-        data_prep(group_class2_test, mat_files2, 'test')
-
-        feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
-            './data/1train.csv', './data/2train.csv', './data/1test.csv', './data/2test.csv')
-        train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
-                                                                              label_class, labels_test)
-        acc = random_forest(train_features, test_features, train_labels, test_labels, feature_list, 1000)
-        accs5000.append(acc)
-    for i in range(0, 6):
-        group_class_train, mat_files = data_adq('1-cr_train', n_train)
-        data_prep(group_class_train, mat_files, 'train')
-        group_class_test, mat_files = data_adq('1-cr_test', n_test)
-        data_prep(group_class_test, mat_files, 'test')
-
-        group_class2, mat_files2 = data_adq('2-hr_train', n_train)
-        data_prep(group_class2, mat_files2, 'train')
-        group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
-        data_prep(group_class2_test, mat_files2, 'test')
-
-        feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
-            './data/1train.csv', './data/2train.csv', './data/1test.csv', './data/2test.csv')
-        train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
-                                                                              label_class, labels_test)
-        acc = random_forest(train_features, test_features, train_labels, test_labels, feature_list, 5000)
-        accs10000.append(acc)
 
     wb = load_workbook('acc_results.xlsx')
     ws = wb['change # trees Classifier']
     col = 2
     row = 3
-    conf_to_Excel([accs1, accs5, accs10, accs100, accs500, accs1000, accs5000, accs10000], row, col, ws)
+    print(accs)
+    conf_to_Excel(accs, row, col, ws)
     wb.save('acc_results.xlsx')
 
-    print('1 tree', accs1)
-    print('5 trees', accs5)
-    print('10 trees', accs10)
-    print('100 tress', accs100)
-    print('500 trees', accs500)
-    print('1000 trees', accs1000)
-    print('5000 trees', accs5000)
-    print('10000 tree', accs10000)
