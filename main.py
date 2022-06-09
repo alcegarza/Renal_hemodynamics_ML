@@ -11,6 +11,7 @@ from openpyxl import load_workbook, Workbook
 
 # take number random files since there are more CR than Harlem
 def data_adq(group, number):
+
     path = os.listdir('./data/' + group + '/')
     files = list()
     for i in range(number):
@@ -31,16 +32,16 @@ def data_prep(group, files, mode):
     for file in files:
         mat = sio.loadmat(file)
         theta = mat.get('theta')
-        class_group = np.concatenate(([int(group[0])], theta.flatten()))
+        class_group = np.concatenate(([int(group[11])], theta.flatten()))
         feat_vect.append(class_group)
     data_save(group, mode, feat_vect)
     # return to home directory
-    os.chdir('../..')
+    os.chdir('../../..')
 
 
 # save the data in a file so the same dataset could be used for further tests
 def data_save(group, mode, feat_vect):
-    save_to = '../' + str(group[0]) + str(mode) + '.csv'
+    save_to = '../' + str(group[11]) + str(mode) + '.csv'
     np.savetxt(save_to, feat_vect, delimiter=",")
 
 
@@ -96,14 +97,14 @@ def split_data(features_train, features_test, labels_train, labels_test):
 
 def random_forest(train_features, test_features, train_labels, test_labels, feature_list, ntrees):
     # Instantiate model with 1000 decision trees
-    rf = RandomForestClassifier(n_estimators=ntrees, random_state=32, max_depth=None)
+    rf = RandomForestClassifier(n_estimators=1000, random_state=32, max_depth=ntrees)
     # Train the model on training data
     rf.fit(train_features, train_labels)
     # Use the forest's predict method on the test data
     predictions = rf.predict(test_features)
 
     accuracy = accuracy_score(test_labels, predictions)
-    print('Accuracy:', round(accuracy, 2))
+    #print('Accuracy:', round(accuracy, 8))
 
     return round(accuracy, 6)
 
@@ -122,40 +123,46 @@ def conf_to_Excel(confs, row, col, ws):
 
 
 if __name__ == '__main__':
-    n_test = 41
-    n_train = 126
-    n_trees = [1,5,10,100,500,1000,5000,10000]
-    accs = []
-    for i in range (0,len(n_trees)):
-        accs.append([])
+    n_test = [41,51,40,44,44]
+    n_train = [126,121,125,121,114]
+    n_trees = [1,5,10,50,100,500,1000,5000]
 
-    j = 0
-    for acc in accs:
-        for i in range(0, 6):
-            group_class_train, mat_files = data_adq('1-cr_train', n_train)
-            data_prep(group_class_train, mat_files, 'train')
-            group_class_test, mat_files = data_adq('1-cr_test', n_test)
-            data_prep(group_class_test, mat_files, 'test')
-
-            group_class2, mat_files2 = data_adq('2-hr_train', n_train)
-            data_prep(group_class2, mat_files2, 'train')
-            group_class2_test, mat_files2 = data_adq('2-hr_test', n_test)
-            data_prep(group_class2_test, mat_files2, 'test')
-
-            feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
-                './data/1train.csv', './data/2train.csv', './data/1test.csv', './data/2test.csv')
-            train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
-                                                                                  label_class, labels_test)
-            accuracy = random_forest(train_features, test_features, train_labels, test_labels, feature_list, n_trees[j])
-            acc.append(accuracy)
-        j += 1
-
+    partitions = ['partition1/','partition2/','partition3/','partition4/', 'partition5/']
 
     wb = load_workbook('acc_results.xlsx')
-    ws = wb['change # trees Classifier']
-    col = 2
-    row = 3
-    print(accs)
-    conf_to_Excel(accs, row, col, ws)
+    ws = wb['change depth 1000# trees Class']
+    for k in range(0, len(partitions)):
+        print(k)
+        j = 0
+        accs = []
+        for i in range (0,len(n_trees)):
+            accs.append([])
+
+        for acc in accs:
+            for i in range(0, 6):
+
+                group_class_train, mat_files = data_adq(partitions[k]+'1-cr_train', n_train[k])
+                data_prep(group_class_train, mat_files, 'train')
+                group_class_test, mat_files = data_adq(partitions[k]+'1-cr_test', n_test[k])
+                data_prep(group_class_test, mat_files, 'test')
+
+                group_class2, mat_files2 = data_adq(partitions[k]+'2-hr_train', n_train[k])
+                data_prep(group_class2, mat_files2, 'train')
+                group_class2_test, mat_files2 = data_adq(partitions[k]+'2-hr_test', n_test[k])
+                data_prep(group_class2_test, mat_files2, 'test')
+
+                feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
+                    './data/' + partitions[k] + '1train.csv', './data/' + partitions[k] + '2train.csv', './data/' + partitions[k] +'1test.csv', './data/' + partitions[k] +'2test.csv')
+                train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
+                                                                                      label_class, labels_test)
+                accuracy = random_forest(train_features, test_features, train_labels, test_labels, feature_list, n_trees[j])
+                acc.append(accuracy)
+            j += 1
+
+        print(accs)
+        row = 3
+        col = 2 + k
+        conf_to_Excel(accs, row, col, ws)
+
     wb.save('acc_results.xlsx')
 
