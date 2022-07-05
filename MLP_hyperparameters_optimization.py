@@ -3,13 +3,12 @@ import os.path
 import random
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from matplotlib import pyplot as plt
+from openpyxl import load_workbook
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-import seaborn as sns
-import matplotlib.pyplot as plt
-from openpyxl import load_workbook, Workbook
-
+from sklearn.neural_network import MLPClassifier
+from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
+from sklearn.metrics import plot_confusion_matrix, accuracy_score
 
 # take number random files since there are more CR than Harlem
 def data_adq(group, number):
@@ -97,36 +96,71 @@ def split_data(features_train, features_test, labels_train, labels_test):
     return train_features, test_features, train_labels, test_labels
 
 
-def random_forest(train_features, test_features, train_labels, test_labels):
-
-    rf = RandomForestClassifier()
-    random_search = {'criterion': ['gini'],
-                     'max_depth': list(np.linspace(5, 1000, num=10, dtype = int)) + [None],
-                     'max_features': ['sqrt'],
-                     'min_samples_leaf': [1, 4, 6, 8, 12],
-                     'min_samples_split': [2, 5, 7, 10, 14],
-                     'n_estimators': list(np.linspace(100, 5000, num=10, dtype = int))}
-    model = RandomizedSearchCV(estimator=rf, param_distributions=random_search, n_iter=11, random_state=32)
+def create_MLP(model, train_features, test_features, train_labels, test_labels):
     # Train the model on training data
     model.fit(train_features, train_labels)
     # Use the forest's predict method on the test data
-
     predictions = model.best_estimator_.predict(test_features)
-    pd.set_option('display.max_columns', None)
 
-
-    # get results for later representation
-    #table = pd.pivot_table(pd.DataFrame(model.cv_results_),
-    #                       values='mean_test_score', index='param_max_depth', columns='param_n_estimators'
-    #                       )
-#    sns.heatmap(table)
-#    plt.show()
-    #print(model.best_params_)
+    #    sns.heatmap(table)
+    #    plt.show()
     best_params = model.best_params_
     best_params['acc'] = accuracy_score(test_labels, predictions)
-    accuracy = accuracy_score(test_labels, predictions)
+    print(best_params)
 
-    return model.best_params_
+    return best_params
+
+
+def random_search():
+
+    mlp = MLPClassifier()
+    param_rs = {'hidden_layer_sizes': [(128,64,32),(150,100,50),(100,50)],
+                'max_iter': [2000],
+                'activation': ['logistic', 'tanh', 'relu'],
+                'solver': ['sgd', 'adam']
+                }
+    model = RandomizedSearchCV(estimator=mlp, param_distributions=param_rs, n_iter=6, random_state=32)
+
+
+    return model
+
+
+# def grid_search(best_params):
+#     # if best_params['n_estimators'] < 5:
+#     #     best_params['n_estimators'] = 151
+#     # if best_params['max_depth'] < 50:
+#     #     best_params['max_depth'] = 151
+#     if best_params['min_samples_leaf'] < 3:
+#         best_params['min_samples_leaf'] = 3
+#     if best_params['min_samples_split'] < 6:
+#         best_params['min_samples_split'] = 6
+#     if type(best_params['max_depth']) is int:
+#         max_depth_array = [best_params['max_depth'] - 25, best_params['max_depth'], best_params['max_depth'] + 25]
+#     else:
+#         max_depth_array = [best_params['max_depth']]
+#
+#
+#
+#
+#     param_gs = {'criterion': [best_params['criterion']],
+#                      'max_depth': max_depth_array,
+#                      'max_features': [best_params['max_features']],
+#                      'min_samples_leaf': [best_params['min_samples_leaf'] - 2,
+#                                           best_params['min_samples_leaf'],
+#                                           best_params['min_samples_leaf'] + 2],
+#                      'min_samples_split': [best_params['min_samples_split'] - 3,
+#                                            best_params['min_samples_split'],
+#                                            best_params['min_samples_split'] + 3],
+#                      'n_estimators': [best_params['n_estimators'] - 50,
+#                                       best_params['n_estimators'] - 25,
+#                                       best_params['n_estimators'],
+#                                       best_params['n_estimators'] + 25,
+#                                       best_params['n_estimators'] + 50]}
+#     clf = RandomForestClassifier()
+#     model = GridSearchCV(estimator=clf, param_grid=param_gs)
+#
+#     return model
+
 
 
 def array_to_Excel_col(dict, row, col, ws):
@@ -135,6 +169,8 @@ def array_to_Excel_col(dict, row, col, ws):
         e = ws.cell(row=row, column=col+i)
         if value is None:
             e.value = 'None'
+        elif type(value) is tuple:
+            e.value = str(value)
         else:
             e.value = value
         i += 1
@@ -143,7 +179,7 @@ def array_to_Excel_col(dict, row, col, ws):
 def params_to_Excel(dic_params,  row, col, ws):
     i = 0
     for params in dic_params:
-        #print(params)
+        print(params)
         array_to_Excel_col(params, row+i, col, ws)
         i += 1
 
@@ -151,46 +187,58 @@ def params_to_Excel(dic_params,  row, col, ws):
 if __name__ == '__main__':
     n_test = [41,51,40,44,44]
     n_train = [126,121,125,121,114]
+    n_trees = [1, 2]
 
     partitions = ['partition1/','partition2/','partition3/','partition4/', 'partition5/']
 
     wb = load_workbook('acc_results.xlsx')
-    ws = wb['Random search']
+    ws = wb['MLP Random Search']
     m = 0
     for k in range(0, len(partitions)):
         print(k)
         j = 0
-        configs = []
+        configs_rs = []
+        configs_gs = []
 
         for i in range(0, 6):
+            print('i =', i)
 
-            group_class_train, mat_files = data_adq(partitions[k]+'1-cr_train', n_train[k])
+            group_class_train, mat_files = data_adq(partitions[k] + '1-cr_train', n_train[k])
             data_prep(group_class_train, mat_files, 'train')
-            group_class_test, mat_files = data_adq(partitions[k]+'1-cr_test', n_test[k])
+            group_class_test, mat_files = data_adq(partitions[k] + '1-cr_test', n_test[k])
             data_prep(group_class_test, mat_files, 'test')
 
-            group_class2, mat_files2 = data_adq(partitions[k]+'2-hr_train', n_train[k])
+            group_class2, mat_files2 = data_adq(partitions[k] + '2-hr_train', n_train[k])
             data_prep(group_class2, mat_files2, 'train')
-            group_class2_test, mat_files2 = data_adq(partitions[k]+'2-hr_test', n_test[k])
+            group_class2_test, mat_files2 = data_adq(partitions[k] + '2-hr_test', n_test[k])
             data_prep(group_class2_test, mat_files2, 'test')
 
             feature_noclass, label_class, feature_list, features_test, labels_test = features_manipulation(
-                './data/' + partitions[k] + '1train.csv', './data/' + partitions[k] + '2train.csv', './data/' + partitions[k] +'1test.csv', './data/' + partitions[k] +'2test.csv')
+                './data/' + partitions[k] + '1train.csv', './data/' + partitions[k] + '2train.csv',
+                './data/' + partitions[k] + '1test.csv', './data/' + partitions[k] + '2test.csv')
             train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
                                                                                   label_class, labels_test)
 
-            configuration = random_forest(train_features, test_features, train_labels, test_labels)
-            configs.append(configuration)
+            # Grid Search based on Random Search
+            model_rs = random_search()
+            conf_bestparams_rs = create_MLP(model_rs, train_features, test_features, train_labels, test_labels)
+            print('random search done')
+            #model_gs = grid_search(conf_bestparams_rs)
+            #conf_bestparams_gs = create_RF(model_gs, train_features, test_features, train_labels, test_labels)
+            #print('grid search done')
+            configs_rs.append(conf_bestparams_rs)
+            #configs_gs.append(conf_bestparams_gs)
 
             j += 1
 
+
         row = 3 + m
         col = 2
-        params_to_Excel(configs, row, col, ws)
-        m +=10
+        print('excel')
+        print(configs_rs)
+        params_to_Excel(configs_rs, row, col, ws)
+        m += 10
 
     wb.save('acc_results.xlsx')
-
-
 
 

@@ -3,11 +3,11 @@ import os.path
 import random
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
+from openpyxl import load_workbook
+from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-from openpyxl import load_workbook, Workbook
-
+from sklearn.metrics import plot_confusion_matrix, accuracy_score
 
 # take number random files since there are more CR than Harlem
 def data_adq(group, number):
@@ -95,17 +95,15 @@ def split_data(features_train, features_test, labels_train, labels_test):
     return train_features, test_features, train_labels, test_labels
 
 
-def random_forest(train_features, test_features, train_labels, test_labels, feature_list, ntrees):
-    # Instantiate model with 1000 decision trees
-    rf = RandomForestClassifier(n_estimators=1000, random_state=32, max_depth=ntrees)
-    # Train the model on training data
-    rf.fit(train_features, train_labels)
-    # Use the forest's predict method on the test data
-    predictions = rf.predict(test_features)
+def MLP(train_features, test_features, train_labels, test_labels):
+    mlp = MLPClassifier(hidden_layer_sizes=(100, 50), activation="relu", random_state=1, max_iter=2000, solver="adam").fit(train_features, train_labels)
+    y_pred = mlp.predict(test_features)
+    accuracy = accuracy_score(test_labels, y_pred)
 
-    accuracy = accuracy_score(test_labels, predictions)
-    #print('Accuracy:', round(accuracy, 8))
-
+    #fig = plot_confusion_matrix(clf, test_features, test_labels, display_labels=["CR", "Har"])
+    #fig.figure_.suptitle("Confusion Matrix for rats")
+    #plt.show()
+    print(accuracy)
     return round(accuracy, 6)
 
 
@@ -125,12 +123,12 @@ def conf_to_Excel(confs, row, col, ws):
 if __name__ == '__main__':
     n_test = [41,51,40,44,44]
     n_train = [126,121,125,121,114]
-    n_trees = [1,5,10,50,100,500,1000,5000]
+    n_trees = [1, 2]
 
     partitions = ['partition1/','partition2/','partition3/','partition4/', 'partition5/']
 
     wb = load_workbook('acc_results.xlsx')
-    ws = wb['change depth 1000# trees Class']
+    ws = wb['MLP']
     for k in range(0, len(partitions)):
         print(k)
         j = 0
@@ -155,7 +153,7 @@ if __name__ == '__main__':
                     './data/' + partitions[k] + '1train.csv', './data/' + partitions[k] + '2train.csv', './data/' + partitions[k] +'1test.csv', './data/' + partitions[k] +'2test.csv')
                 train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
                                                                                       label_class, labels_test)
-                accuracy = random_forest(train_features, test_features, train_labels, test_labels, feature_list, n_trees[j])
+                accuracy = MLP(train_features, test_features, train_labels, test_labels)
                 acc.append(accuracy)
             j += 1
 
@@ -165,4 +163,5 @@ if __name__ == '__main__':
         conf_to_Excel(accs, row, col, ws)
 
     wb.save('acc_results.xlsx')
+
 

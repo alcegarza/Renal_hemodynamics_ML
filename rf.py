@@ -4,7 +4,7 @@ import random
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn import svm
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from openpyxl import load_workbook, Workbook
 
@@ -95,18 +95,18 @@ def split_data(features_train, features_test, labels_train, labels_test):
     return train_features, test_features, train_labels, test_labels
 
 
-def support_vec(train_features, test_features, train_labels, test_labels, gamma):
-    # Create a svm Classifier
-    clf = svm.SVC(kernel='rbf', gamma=360, degree=7)
-
-    # Train the model using the training sets
-    clf.fit(train_features, train_labels)
-
-    # Predict the response for test dataset
-    predictions = clf.predict(test_features)
+def random_forest(train_features, test_features, train_labels, test_labels, feature_list, ntrees):
+    # Instantiate model
+    rf = RandomForestClassifier(n_estimators=2550, random_state=32, max_depth=4300, max_features='sqrt',
+                                min_samples_leaf=11, min_samples_split=9
+                                )
+    # Train the model on training data
+    rf.fit(train_features, train_labels)
+    # Use the forest's predict method on the test data
+    predictions = rf.predict(test_features)
 
     accuracy = accuracy_score(test_labels, predictions)
-    # print('Accuracy:', round(accuracy, 8))
+    #print('Accuracy:', round(accuracy, 8))
 
     return round(accuracy, 6)
 
@@ -127,18 +127,20 @@ def conf_to_Excel(confs, row, col, ws):
 if __name__ == '__main__':
     n_test = [41,51,40,44,44]
     n_train = [126,121,125,121,114]
-    #gamma= ['scale','auto',0.1,1,10,50,100,500]
-    gamma = ['scale', 'auto']
+
+    # n_trees = [1, 5, 10, 100, 500, 1000, 5000, 10000]
+    #n_trees = [1,5,10,50,100,500,1000,5000]
+    n_trees = [1,2]
 
     partitions = ['partition1/','partition2/','partition3/','partition4/', 'partition5/']
 
     wb = load_workbook('acc_results.xlsx')
-    ws = wb['SVM final']
+    ws = wb['RF final']
     for k in range(0, len(partitions)):
         print(k)
         j = 0
         accs = []
-        for i in range (0,len(gamma)):
+        for i in range (0,len(n_trees)):
             accs.append([])
 
         for acc in accs:
@@ -158,7 +160,7 @@ if __name__ == '__main__':
                     './data/' + partitions[k] + '1train.csv', './data/' + partitions[k] + '2train.csv', './data/' + partitions[k] +'1test.csv', './data/' + partitions[k] +'2test.csv')
                 train_features, test_features, train_labels, test_labels = split_data(feature_noclass, features_test,
                                                                                       label_class, labels_test)
-                accuracy = support_vec(train_features, test_features, train_labels, test_labels, gamma[j])
+                accuracy = random_forest(train_features, test_features, train_labels, test_labels, feature_list, n_trees[j])
                 acc.append(accuracy)
             j += 1
 
